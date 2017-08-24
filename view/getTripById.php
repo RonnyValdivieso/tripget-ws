@@ -1,19 +1,20 @@
 <?php
 /**
- * Obtiene todos los viajes con determinado destino y presupuesto de la base de datos
+ * Obtiene un viaje con determinado id de la base de datos
  */
 
 require '../model/trip.php';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
-    if (isset($_GET['destination']) && isset($_GET['budget']) && isset($_GET['user_id'])) {
+    $body = json_decode(file_get_contents("php://input"), true);
+
+    if (isset($body['id']) && isset($body['user_id'])) {
 
         // Tratar retorno
-        $retorno = Trip::getByDestinationAndBudget(
-            $_GET['destination'],
-            $_GET['budget'],
-            $_GET['user_id']
+        $retorno = Trip::getById(
+            $body['id'],
+            $body['user_id']
         );
 
 

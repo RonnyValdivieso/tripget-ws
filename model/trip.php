@@ -35,18 +35,21 @@ class Trip {
 	 * Obtiene los campos de un viaje con un destino
 	 * determinado
 	 *
-	 * @param $destination 	destino del viaje
+	 * @param $id 	identificador del viaje
 	 * @return array
 	 */
-	public static function getById($id) {
+	public static function getById($id, $user_id) {
 
 		// Consulta del usuario
-		$consulta = "SELECT id, title, content, destination, budget, trip_date, 
-							food, accommodation, trip_transportation,
-							local_transportation, entertainment, shopping,
-							trip_image, votes, guest_id, trip_duration_id
-					 FROM trip
-					 WHERE destination = ?";
+		$consulta = "SELECT t.id, t.title, t.content, t.destination, t.trip_date, t.food, 
+							t.accommodation, t.trip_transportation, t.local_transportation, 
+							t.entertainment, t.shopping, t.trip_image, 
+							(SELECT COUNT(*) FROM trip_likes WHERE trip_id = t.id) AS likes, 
+							(SELECT COUNT(*) FROM trip_likes WHERE trip_id = t.id AND user_id = $user_id) AS liked,
+							t.guest_id, t.trip_duration_id
+					 FROM trip t
+					 INNER JOIN user u ON t.user_id = u.id
+					 WHERE t.id = ?";
 		try {
 			// Preparar sentencia
 			$comando = Database::getInstance()->getDb()->prepare($consulta);
@@ -55,7 +58,7 @@ class Trip {
 			$comando->execute(array($id));
 			
 			// Capturar primera fila del resultado
-			$row = $comando->fetch(PDO::FETCH_ASSOC);
+			$row = $comando->fetchAll(PDO::FETCH_ASSOC);
 			
 			return $row;
 		} catch (PDOException $e) {
@@ -74,9 +77,9 @@ class Trip {
 	 */
 	public static function getByDestination($destination) {
 
-		// Consulta del usuario
-		$consulta = "SELECT t.id, t.title, u.username, t.trip_date, t.budget,
-							u.photo, t.trip_image, t.votes
+		$consulta = "SELECT t.id, t.title, u.username, t.trip_date, 
+							t.budget, u.photo, t.trip_image, 
+							(SELECT COUNT(*) FROM trip_likes WHERE trip_id = t.id) AS likes
 					 FROM trip t
 					 INNER JOIN user u ON t.user_id = u.id
 					 WHERE destination = ?";
@@ -88,7 +91,7 @@ class Trip {
 			$comando->execute(array($destination));
 			
 			// Capturar primera fila del resultado
-			$row = $comando->fetch(PDO::FETCH_ASSOC);
+			$row = $comando->fetchAll(PDO::FETCH_ASSOC);
 			
 			return $row;
 		} catch (PDOException $e) {
@@ -108,11 +111,12 @@ class Trip {
 	public static function getByBudget($budget) {
 
 		// Consulta del usuario
-		$consulta = "SELECT t.id, t.title, t.destination, u.username, t.trip_date, t.budget,
-							u.photo, t.trip_image, t.votes
+		$consulta = "SELECT t.id, t.title, t.destination, u.username, 
+							t.trip_date, t.budget, u.photo, t.trip_image, 
+							(SELECT COUNT(*) FROM trip_likes WHERE trip_id = t.id) AS likes
 					 FROM trip t
 					 INNER JOIN user u ON t.user_id = u.id
-					 WHERE budget = ?";
+					 WHERE budget <= ?";
 		try {
 			// Preparar sentencia
 			$comando = Database::getInstance()->getDb()->prepare($consulta);
@@ -121,7 +125,7 @@ class Trip {
 			$comando->execute(array($budget));
 			
 			// Capturar primera fila del resultado
-			$row = $comando->fetch(PDO::FETCH_ASSOC);
+			$row = $comando->fetchAll(PDO::FETCH_ASSOC);
 			
 			return $row;
 		} catch (PDOException $e) {
@@ -141,12 +145,12 @@ class Trip {
 	 */
 	public static function getByDestinationAndBudget($destination, $budget) {
 		// Consulta del usuario
-		$consulta = "SELECT t.id, t.title, u.username, t.trip_date, t.budget,
-							u.photo, t.trip_image, t.votes
-					 FROM trip t
-					 INNER JOIN user u ON t.user_id = u.id
-					 WHERE destination = ?
-					 AND budget = ?";
+		$consulta = "SELECT t.id, t.title, u.username, t.trip_date, t.budget, u.photo, t.trip_image, 
+							(SELECT COUNT(*) FROM trip_likes WHERE trip_id = t.id) AS likes 
+					FROM trip t 
+					INNER JOIN user u ON t.user_id = u.id 
+					WHERE destination = ?
+					AND budget <= ?";
 		try {
 			// Preparar sentencia
 			$comando = Database::getInstance()->getDb()->prepare($consulta);
@@ -155,7 +159,7 @@ class Trip {
 			$comando->execute(array($destination, $budget));
 			
 			// Capturar primera fila del resultado
-			$row = $comando->fetch(PDO::FETCH_ASSOC);
+			$row = $comando->fetchAll(PDO::FETCH_ASSOC);
 			
 			return $row;
 		} catch (PDOException $e) {
@@ -229,12 +233,13 @@ class Trip {
 	 */
 	public static function insert($title, $content, $destination, $budget, $trip_date, $food,
 								  $accommodation, $trip_transportation, $local_transportation,
-								  $entertainment, $shopping, $trip_image, $guest_id, $trip_duration_id) {
+								  $entertainment, $shopping, $guest_id,
+								  $trip_duration_id) {
 
 		// Sentencia INSERT
-		$comando = "INSERT INTO trip (title, content, destination, budget, trip_date, food, accomodation,
+		$comando = "INSERT INTO trip (title, content, destination, budget, trip_date, food, accommodation,
 							trip_transportation, local_transportation, entertainment, shopping,
-							trip_image, guest_id, trip_duration_id)
+							guest_id, trip_duration_id)
 					VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
 		// Preparar la sentencia
@@ -243,7 +248,7 @@ class Trip {
 		return $sentencia->execute(
 			array($title, $content, $destination, $budget, $trip_date, $food,
 				  $accommodation, $trip_transportation, $local_transportation,
-				  $entertainment, $shopping, $trip_image, $guest_id, $trip_duration_id)
+				  $entertainment, $shopping, $guest_id, $trip_duration_id)
 		);
 
 	}
@@ -263,6 +268,24 @@ class Trip {
 		$sentencia = Database::getInstance()->getDb()->prepare($comando);
 
 		return $sentencia->execute(array($id));
+	}
+
+	/**
+	 * Aumentar un like al viaje
+	 *
+	 * @param $trip_id identificador del viaje
+	 * @param $user_id identificador del usuario
+	 * @return bool Respuesta de la eliminación
+	 */
+	public static function setLike($trip_id, $user_id) {
+		// Sentencia INSERT
+		$comando = "INSERT INTO trip_likes(trip_id, user_id)
+					VALUES($trip_id, $user_id)";
+
+		// Preparar la sentencia
+		$sentencia = Database::getInstance()->getDb()->prepare($comando);
+
+		return $sentencia->execute(array($trip_id, $user_id));
 	}
 }
 

@@ -18,6 +18,7 @@ class User {
 	 */
 	public static function getAll() {
 		$consulta = "SELECT * FROM user";
+		
 		try {
 			// Preparar sentencia
 			$comando = Database::getInstance()->getDb()->prepare($consulta);
