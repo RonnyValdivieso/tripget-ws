@@ -5,6 +5,7 @@
  * almacenadas en la base de datos
  */
 require '../database/database.php';
+require '../filemanager/upload.php';
 
 class Trip {
 	function __construct() {
@@ -35,17 +36,16 @@ class Trip {
 	 * Obtiene los campos de un viaje con un destino
 	 * determinado
 	 *
-	 * @param $id 	identificador del viaje
-	 * @return array
+	 * @param 	$id 	identificador del viaje
+	 * @return 	array
 	 */
-	public static function getById($id, $user_id) {
+	public static function getById($id) {
 
 		// Consulta del usuario
-		$consulta = "SELECT t.id, t.title, t.content, t.destination, t.trip_date, t.food, 
+		$consulta = "SELECT t.id, u.username, u.photo, t.title, t.content, t.destination, t.budget, t.trip_date, t.food, 
 							t.accommodation, t.trip_transportation, t.local_transportation, 
 							t.entertainment, t.shopping, t.trip_image, 
 							(SELECT COUNT(*) FROM trip_likes WHERE trip_id = t.id) AS likes, 
-							(SELECT COUNT(*) FROM trip_likes WHERE trip_id = t.id AND user_id = $user_id) AS liked,
 							t.guest_id, t.trip_duration_id
 					 FROM trip t
 					 INNER JOIN user u ON t.user_id = u.id
@@ -75,14 +75,37 @@ class Trip {
 	 * @param $destination 	destino del viaje
 	 * @return array
 	 */
-	public static function getByDestination($destination) {
+	public static function getByDestination($destination, $order, $user_id) {
+
+		$orderWay = "DESC";
+
+		switch($order) {
+			case '0':
+				$order = "trip_date";
+				break;
+
+			case '1':
+				$order = "budget";
+				$orderWay = "ASC";
+				break;
+
+			case '2':
+				$order = "budget";
+				break;
+
+			case '3':
+				$order = "likes";
+				break;
+		}
 
 		$consulta = "SELECT t.id, t.title, u.username, t.trip_date, 
 							t.budget, u.photo, t.trip_image, 
-							(SELECT COUNT(*) FROM trip_likes WHERE trip_id = t.id) AS likes
+							(SELECT COUNT(*) FROM trip_likes WHERE trip_id = t.id) AS likes,
+							(SELECT COUNT(*) FROM trip_likes WHERE trip_id = t.id AND user_id = $user_id) AS liked
 					 FROM trip t
 					 INNER JOIN user u ON t.user_id = u.id
-					 WHERE destination = ?";
+					 WHERE destination = ?
+					 ORDER BY $order $orderWay";
 		try {
 			// Preparar sentencia
 			$comando = Database::getInstance()->getDb()->prepare($consulta);
@@ -108,15 +131,38 @@ class Trip {
 	 * @param $budget 	presupuesto del viaje
 	 * @return array
 	 */
-	public static function getByBudget($budget) {
+	public static function getByBudget($budget, $order, $user_id) {
+
+		$orderWay = "DESC";
+
+		switch($order) {
+			case '0':
+				$order = "trip_date";
+				break;
+
+			case '1':
+				$order = "budget";
+				$orderWay = "ASC";
+				break;
+
+			case '2':
+				$order = "budget";
+				break;
+
+			case '3':
+				$order = "likes";
+				break;
+		}
 
 		// Consulta del usuario
 		$consulta = "SELECT t.id, t.title, t.destination, u.username, 
 							t.trip_date, t.budget, u.photo, t.trip_image, 
-							(SELECT COUNT(*) FROM trip_likes WHERE trip_id = t.id) AS likes
+							(SELECT COUNT(*) FROM trip_likes WHERE trip_id = t.id) AS likes,
+							(SELECT COUNT(*) FROM trip_likes WHERE trip_id = t.id AND user_id = $user_id) AS liked
 					 FROM trip t
 					 INNER JOIN user u ON t.user_id = u.id
-					 WHERE budget <= ?";
+					 WHERE budget <= ?
+					 ORDER BY $order $orderWay";
 		try {
 			// Preparar sentencia
 			$comando = Database::getInstance()->getDb()->prepare($consulta);
@@ -143,14 +189,38 @@ class Trip {
 	 * @param $budget 		presupuesto del viaje
 	 * @return mixed
 	 */
-	public static function getByDestinationAndBudget($destination, $budget) {
+	public static function getByDestinationAndBudget($destination, $budget, $order, $user_id) {
+
+		$orderWay = "DESC";
+
+		switch($order) {
+			case '0':
+				$order = "trip_date";
+				break;
+
+			case '1':
+				$order = "budget";
+				$orderWay = "ASC";
+				break;
+
+			case '2':
+				$order = "budget";
+				break;
+
+			case '3':
+				$order = "likes";
+				break;
+		}
+
 		// Consulta del usuario
 		$consulta = "SELECT t.id, t.title, u.username, t.trip_date, t.budget, u.photo, t.trip_image, 
-							(SELECT COUNT(*) FROM trip_likes WHERE trip_id = t.id) AS likes 
+							(SELECT COUNT(*) FROM trip_likes WHERE trip_id = t.id) AS likes,
+							(SELECT COUNT(*) FROM trip_likes WHERE trip_id = t.id AND user_id = $user_id) AS liked
 					FROM trip t 
 					INNER JOIN user u ON t.user_id = u.id 
 					WHERE destination = ?
-					AND budget <= ?";
+					AND budget <= ?
+					ORDER BY $order $orderWay";
 		try {
 			// Preparar sentencia
 			$comando = Database::getInstance()->getDb()->prepare($consulta);
@@ -189,17 +259,19 @@ class Trip {
 	 * @param $guest_id 			nuevo id de Numero de personas
 	 * @param $trip_duration_id		nuevo id de duración de viaje
 	 */
-	public static function update($id, $title, $content, $destination, $budget, $trip_date, $food,
-								  $accommodation, $trip_transportation, $local_transportation,
-								  $entertainment, $shopping, $trip_image, $guest_id, $trip_duration_id) {
+	public static function update($id, $title, $content, $destination, $budget, $trip_date, 
+								  $food, $accommodation, $trip_transportation,
+								  $local_transportation, $entertainment, $shopping, 
+								  $guest_id, $trip_duration_id) {
 		// Creando consulta UPDATE
 		$consulta = "UPDATE trip 
-					 SET title='$title', content='$content', destination='$destination', budget='$budget',
-					 	 trip_date='$trip_date', food='$food', accommodation='$accommodation',
-					 	 trip_transportation='$trip_transportation', local_transportation='$local_transportation',
-					 	 entertainment='$entertainment', shopping='$shopping', trip_image='$trip_image',
-					 	 guest_id='$guest_id', trip_duration_id='$trip_duration_id'
-			  	  	 WHERE id='$id'";
+					 SET title = '$title', content = '$content', destination = '$destination', 
+					 	 budget = '$budget', trip_date = '$trip_date', food = '$food', 
+					 	 accommodation = '$accommodation', trip_transportation = '$trip_transportation', 
+					 	 local_transportation = '$local_transportation', entertainment = '$entertainment', 
+					 	 shopping = '$shopping', guest_id = $guest_id, 
+					 	 trip_duration_id = $trip_duration_id
+			  	  	 WHERE id = $id";
 
 		// Preparar la sentencia
 		$cmd = Database::getInstance()->getDb()->prepare($consulta);
@@ -207,7 +279,7 @@ class Trip {
 		// Relacionar y ejecutar la sentencia
 		$cmd->execute(array($title, $content, $destination, $budget, $trip_date, $food, $accommodation,
 							$trip_transportation, $local_transportation, $entertainment, $shopping,
-							$trip_image, $guest_id, $trip_duration_id));
+							$guest_id, $trip_duration_id));
 
 		return $cmd;
 	}
@@ -231,38 +303,41 @@ class Trip {
 	 * @param $trip_duration_id		nuevo id de duración de viaje
 	 * @return PDOStatement
 	 */
-	public static function insert($title, $content, $destination, $budget, $trip_date, $food,
-								  $accommodation, $trip_transportation, $local_transportation,
-								  $entertainment, $shopping, $guest_id,
-								  $trip_duration_id) {
+	public static function insert($title, $content, $destination, $budget, $trip_date, 
+								  $food, $accommodation, $trip_transportation,
+								  $local_transportation, $entertainment, $shopping,
+								  $guest_id, $trip_duration_id, $user_id) {
 
 		// Sentencia INSERT
-		$comando = "INSERT INTO trip (title, content, destination, budget, trip_date, food, accommodation,
-							trip_transportation, local_transportation, entertainment, shopping,
-							guest_id, trip_duration_id)
+		$comando = "INSERT INTO trip (title, content, destination, budget, trip_date, 
+						food, accommodation, trip_transportation, local_transportation,
+						entertainment, shopping, guest_id, trip_duration_id, user_id)
 					VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
 
 		// Preparar la sentencia
 		$sentencia = Database::getInstance()->getDb()->prepare($comando);
 
-		return $sentencia->execute(
+		$resultado = $sentencia->execute(
 			array($title, $content, $destination, $budget, $trip_date, $food,
 				  $accommodation, $trip_transportation, $local_transportation,
-				  $entertainment, $shopping, $guest_id, $trip_duration_id)
+				  $entertainment, $shopping, $guest_id, $trip_duration_id, $user_id)
 		);
+
+		return $resultado;
 
 	}
 
 	/**
 	 * Eliminar el registro con el identificador especificado
 	 *
-	 * @param $id identificador del usuario
-	 * @return bool Respuesta de la eliminación
+	 * @param 	$id identificador del usuario
+	 * @return 	bool Respuesta de la eliminación
 	 */
 	public static function delete($id)
 	{
 		// Sentencia DELETE
-		$comando = "DELETE FROM trip WHERE id=?";
+		$comando = "DELETE FROM trip WHERE id = ?";
 
 		// Preparar la sentencia
 		$sentencia = Database::getInstance()->getDb()->prepare($comando);
@@ -278,14 +353,132 @@ class Trip {
 	 * @return bool Respuesta de la eliminación
 	 */
 	public static function setLike($trip_id, $user_id) {
-		// Sentencia INSERT
-		$comando = "INSERT INTO trip_likes(trip_id, user_id)
-					VALUES($trip_id, $user_id)";
+
+		$result = 0;
+
+		$comando = "SELECT id FROM trip_likes
+					WHERE trip_id = $trip_id
+					AND user_id = $user_id";
+
 
 		// Preparar la sentencia
 		$sentencia = Database::getInstance()->getDb()->prepare($comando);
 
-		return $sentencia->execute(array($trip_id, $user_id));
+		$resultado = $sentencia->execute(
+			array($trip_id, $user_id)
+		);
+
+		$row = json_encode($sentencia->fetchAll(PDO::FETCH_ASSOC));
+
+		$like_id = $resultado;
+
+		if ($row != "[]") {
+			$comando = "DELETE FROM trip_likes
+						WHERE id = $like_id";
+
+			$result = 2;
+		} else {
+			$comando = "INSERT INTO trip_likes(trip_id, user_id)
+						VALUES ($trip_id, $user_id)";
+
+			$result = 1;
+		}
+
+		// Preparar la sentencia
+		$sentencia = Database::getInstance()->getDb()->prepare($comando);
+		$sentencia->execute(array($trip_id, $user_id));
+
+		return $result;
+	}
+
+	/**
+	 * Obtiene los viajes de un usuario
+	 * determinado
+	 *
+	 * @param $id 	id del usuario
+	 * @return array
+	 */
+	public static function getTripsByUserId($user_id, $order) {
+
+		$orderWay = "DESC";
+
+		switch($order) {
+			case '0':
+				$order = "trip_date";
+				break;
+
+			case '1':
+				$order = "budget";
+				$orderWay = "ASC";
+				break;
+
+			case '2':
+				$order = "budget";
+				break;
+
+			case '3':
+				$order = "likes";
+				break;
+		}
+
+		// Consulta del usuario
+		$consulta = "SELECT t.id, t.title, u.username, t.trip_date, t.budget, u.photo, t.trip_image, 
+							(SELECT COUNT(*) FROM trip_likes WHERE trip_id = t.id) AS likes 
+					FROM trip t 
+					INNER JOIN user u ON t.user_id = u.id 
+					WHERE user_id = ? 
+					ORDER BY $order $orderWay";
+		try {
+			// Preparar sentencia
+			$comando = Database::getInstance()->getDb()->prepare($consulta);
+
+			// Ejecutar sentencia preparada
+			$comando->execute(array($user_id));
+			
+			// Capturar primera fila del resultado
+			$row = $comando->fetchAll(PDO::FETCH_ASSOC);
+			
+			return $row;
+		} catch (PDOException $e) {
+			// Aquí puedes clasificar el error dependiendo de la excepción
+			// para presentarlo en la respuesta Json
+			return -1;
+		}
+	}
+
+	/**
+	 * Obtiene los campos de un viaje con un destino
+	 * determinado
+	 *
+	 * @param $id 	identificador del viaje
+	 * @return array
+	 */
+	public static function getNotificationsById($id) {
+
+		// Consulta del usuario
+		// FALTA ------------------------------------------------
+		$consulta = "SELECT (SELECT u.username FROM user
+							 INNER JOIN trip_likes tl ON tl.user_id =  WHERE trip_id = t.id) AS likes, 
+							u.photo, u.username, t.trip_image
+					 FROM trip t
+					 INNER JOIN user u ON t.user_id = u.id
+					 WHERE t.id = ?";
+		try {
+			// Preparar sentencia
+			$comando = Database::getInstance()->getDb()->prepare($consulta);
+
+			// Ejecutar sentencia preparada
+			$comando->execute(array($id));
+			
+			// Capturar primera fila del resultado
+			$row = $comando->fetchAll(PDO::FETCH_ASSOC);
+			
+			return $row;
+		} catch (PDOException $e) {
+			// Aquí puedes clasificar el error dependiendo de la excepción
+			// para presentarlo en la respuesta Json
+			return -1;
+		}
 	}
 }
 

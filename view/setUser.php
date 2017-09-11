@@ -1,22 +1,24 @@
 <?php
 
-require '../model/trip.php';
+require '../model/user.php';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     $body = json_decode(file_get_contents("php://input"), true);
 
     // Insertar like
-    $retorno = Trip::setLike(
-        $body['trip_id'],
-        $body['user_id']
+    $retorno = User::insert(
+        $body['account_id'],
+        $body['username'],
+        $body['name'],
+        $body['last_name'],
+        $body['email']
     );
 
     if ($retorno) {
         // Código de éxito
         print json_encode(
             array(
-                'response' => $retorno,
                 'status' => '1',
                 'message' => 'Creacion exitosa')
         );

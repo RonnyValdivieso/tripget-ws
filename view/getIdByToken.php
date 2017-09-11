@@ -1,30 +1,28 @@
 <?php
 /**
- * Obtiene todos los viajes con determinado destino de la base de datos
+ * Obtiene el token del usuario con determinado id de la base de datos
  */
 
-require '../model/trip.php';
+require '../model/user.php';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 	$body = json_decode(file_get_contents("php://input"), true);
 
-	if (isset($body['destination']) && isset($body['order']) && isset($body['user_id'])) {
+	if (isset($body['account_id'])) {
 
 		// Tratar retorno
-		$retorno = Trip::getByDestination(
-			$body['destination'],
-			$body['order'],
-			$body['user_id']
+		$retorno = User::getIdByToken(
+			$body['account_id']
 		);
 
 
 		if ($retorno) {
 
-			$trips["status"] = "1";
-			$trips["trips"] = $retorno;
+			$users["status"] = "1";
+			$users["users"] = $retorno;
 			// Enviar objeto json de los viajes
-			print json_encode($trips);
+			print json_encode($users);
 		} else {
 			// Enviar respuesta de error general
 			print json_encode(

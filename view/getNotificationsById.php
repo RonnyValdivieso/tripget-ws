@@ -1,6 +1,6 @@
 <?php
 /**
- * Obtiene todos los viajes con determinado destino de la base de datos
+ * Obtiene el token del usuario con determinado id de la base de datos
  */
 
 require '../model/trip.php';
@@ -9,15 +9,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 	$body = json_decode(file_get_contents("php://input"), true);
 
-	if (isset($body['destination']) && isset($body['order']) && isset($body['user_id'])) {
+	if (isset($body['id'])) {
 
 		// Tratar retorno
-		$retorno = Trip::getByDestination(
-			$body['destination'],
-			$body['order'],
-			$body['user_id']
+		$retorno = Trip::getNotificationsById(
+			$body['id']
 		);
-
 
 		if ($retorno) {
 

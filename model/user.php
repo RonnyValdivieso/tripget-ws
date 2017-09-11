@@ -91,24 +91,24 @@ class User {
 	/**
 	 * Insertar un nuevo usuario
 	 *
+	 * @param $account_id   identificador de cuenta de usuario google
 	 * @param $username     nombre de usuario del nuevo registro
 	 * @param $name 		nombre del nuevo registro
 	 * @param $last_name    apellido del nuevo registro
 	 * @param $email 		correo electronico del nuevo registro
-	 * @param $photo		foto del nuevo registro
 	 * @return PDOStatement
 	 */
-	public static function insert($username, $name, $last_name, $email, $photo) {
+	public static function insert($account_id, $username, $name, $last_name, $email) {
 
 		// Sentencia INSERT
-		$comando = "INSERT INTO user (username, name, last_name, email, photo)
+		$comando = "INSERT INTO user (account_id, username, name, last_name, email)
 					VALUES(?, ?, ?, ?, ?)";
 
 		// Preparar la sentencia
 		$sentencia = Database::getInstance()->getDb()->prepare($comando);
 
 		return $sentencia->execute(
-			array($username, $name, $last_name, $email, $photo)
+			array($account_id, $username, $name, $last_name, $email)
 		);
 
 	}
@@ -128,6 +128,35 @@ class User {
 		$sentencia = Database::getInstance()->getDb()->prepare($comando);
 
 		return $sentencia->execute(array($id));
+	}
+
+	/**
+	 * Obtiene el token de un usuario con un identificador
+	 * determinado
+	 *
+	 * @param $id Identificador del usuario
+	 * @return mixed
+	 */
+	public static function getIdByToken($account_id) {
+		// Consulta del usuario
+		$consulta = "SELECT id 
+					 FROM user
+					 WHERE account_id = ?";
+
+		try {
+			// Preparar sentencia
+			$comando = Database::getInstance()->getDb()->prepare($consulta);
+			// Ejecutar sentencia preparada
+			$comando->execute(array($account_id));
+			// Capturar primera fila del resultado
+			$row = $comando->fetch(PDO::FETCH_ASSOC);
+			return $row;
+
+		} catch (PDOException $e) {
+			// Aquí puedes clasificar el error dependiendo de la excepción
+			// para presentarlo en la respuesta Json
+			return -1;
+		}
 	}
 }
 

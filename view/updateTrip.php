@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                   $body['shopping'];
 
     // Insertar like
-    $retorno = Trip::insert(
+    $retorno = Trip::update(
         $body['title'],
         $body['content'],
         $body['destination'],
@@ -24,8 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $body['entertainment'],
         $body['shopping'],
         $body['guest_id'],
-        $body['trip_duration_id'],
-        $body['user_id']
+        $body['trip_duration_id']
     );
 
     if ($retorno) {
@@ -33,14 +32,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         print json_encode(
             array(
                 'status' => '1',
-                'message' => 'Creacion exitosa')
+                'message' => 'Actualizacion exitosa')
         );
     } else {
         // Código de falla
         print json_encode(
             array(
                 'status' => '2',
-                'message' => 'Creacion fallida')
+                'message' => 'Actualizacion fallida')
         );
     }
 }

@@ -1,7 +1,7 @@
 <?php
 /**
  * Obtiene el detalle de un viaje especificado por
- * el parámetro "budget"
+ * el parámetro "user_id"
  */
 
 require '../model/trip.php';
@@ -10,14 +10,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     $body = json_decode(file_get_contents("php://input"), true);
 
-    if (isset($body['budget']) && isset($body['order']) && isset($body['user_id'])) {
+    $parametro = $body['user_id'];
+
+    if ($parametro) {
 
         // Tratar retorno
-        $retorno = Trip::getByBudget(
-            $body['budget'],
-            $body['order'],
-            $body['user_id']
-        );
+        $retorno = Trip::getTripsByUserId($parametro);
 
         if ($retorno) {
 
