@@ -456,13 +456,12 @@ class Trip {
 	public static function getNotificationsById($id) {
 
 		// Consulta del usuario
-		// FALTA ------------------------------------------------
-		$consulta = "SELECT (SELECT u.username FROM user
-							 INNER JOIN trip_likes tl ON tl.user_id =  WHERE trip_id = t.id) AS likes, 
-							u.photo, u.username, t.trip_image
-					 FROM trip t
-					 INNER JOIN user u ON t.user_id = u.id
-					 WHERE t.id = ?";
+
+		$consulta = "SELECT t.id, u.username, u.photo, t.trip_image
+					 FROM trip_likes tl 
+					 INNER JOIN trip t ON t.id = tl.trip_id 
+					 INNER JOIN user u ON u.id = tl.user_id 
+					 WHERE u.id = ?";
 		try {
 			// Preparar sentencia
 			$comando = Database::getInstance()->getDb()->prepare($consulta);

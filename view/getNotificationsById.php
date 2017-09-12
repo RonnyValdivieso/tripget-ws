@@ -18,10 +18,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 		if ($retorno) {
 
-			$trips["status"] = "1";
-			$trips["trips"] = $retorno;
+			$notification["status"] = "1";
+			$notification["notification"] = $retorno;
 			// Enviar objeto json de los viajes
-			print json_encode($trips);
+			print json_encode($notification);
 		} else {
 			// Enviar respuesta de error general
 			print json_encode(
